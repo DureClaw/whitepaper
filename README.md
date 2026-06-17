@@ -5,7 +5,10 @@ _The source + build pipeline for the DureClaw technical whitepaper._
 
 ## 📄 다운로드 / Download
 
-**[DureClaw-Whitepaper-v1.0.pdf](DureClaw-Whitepaper-v1.0.pdf)** — A4, 한/영 혼용 (Korean–English).
+- **[DureClaw-Whitepaper-v1.0-KO.pdf](DureClaw-Whitepaper-v1.0-KO.pdf)** — 한국어판 (Korean edition)
+- **[DureClaw-Whitepaper-v1.0-EN.pdf](DureClaw-Whitepaper-v1.0-EN.pdf)** — English edition
+
+같은 내용을 두 판으로 — 한글중심 / 영어중심. _Same content, two editions._
 
 ## 무엇을 다루나 / Contents
 
@@ -19,14 +22,14 @@ _The source + build pipeline for the DureClaw technical whitepaper._
 - **적용 사례 / Use Case** — 분산 엣지 × 제조 MES (dure-factory + Open MES Korea)
 - **시작점 → AX · 로드맵 · 부록**(와이어 프로토콜·노드 env)
 
-원본은 [`src/whitepaper.md`](src/whitepaper.md)입니다 (GitHub에서 바로 렌더).
+원본은 [`src/whitepaper.ko.md`](src/whitepaper.ko.md) · [`src/whitepaper.en.md`](src/whitepaper.en.md)입니다 (GitHub에서 바로 렌더).
 
 ## 빌드 / Build
 
-Markdown → HTML(pandoc) → PDF(Chrome headless, 한글 픽셀-퍼펙트 렌더):
+Markdown → HTML(pandoc) → PDF(Chrome headless, 한글 픽셀-퍼펙트 렌더). 한 번에 두 판 생성:
 
 ```bash
-./scripts/build.sh        # → DureClaw-Whitepaper-v1.0.pdf
+./scripts/build.sh        # → DureClaw-Whitepaper-v1.0-{KO,EN}.pdf
 ```
 
 요구 / requires: `pandoc`, Google Chrome (`--headless` print-to-pdf). 폰트는 시스템의
@@ -35,10 +38,11 @@ Apple SD Gothic Neo / Pretendard / Noto Sans KR 를 사용합니다.
 ## 구조 / Layout
 
 ```
-src/whitepaper.md     문서 원본 (single source of truth)
-src/template.html     pandoc HTML 템플릿 + 인쇄용 CSS (브랜드 팔레트)
-scripts/build.sh      MD → HTML → PDF 빌드
-DureClaw-Whitepaper-v1.0.pdf   산출물
+src/whitepaper.ko.md   한국어판 원본 (Korean source)
+src/whitepaper.en.md   English source
+src/template.html      pandoc HTML 템플릿 + 인쇄용 CSS (브랜드 팔레트)
+scripts/build.sh       MD → HTML → PDF (두 판)
+DureClaw-Whitepaper-v1.0-KO.pdf · -EN.pdf   산출물
 ```
 
 ---

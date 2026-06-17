@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>DureClaw — Technical Whitepaper</title>
+<style>
+  @page { size: A4; margin: 17mm 15mm 16mm; }
+  :root{
+    --ink:#0f172a; --sub:#334155; --mut:#94a3b8; --line:#e2e8f0;
+    --emerald:#059669; --emerald-bg:#ecfdf5; --emerald-line:#a7f3d0;
+    --indigo:#4f46e5; --indigo-bg:#eef2ff; --code-bg:#0b1220; --code-ink:#cdd9e5;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,system-ui,sans-serif;
+    color:var(--ink); font-size:10.5pt; line-height:1.66; -webkit-font-smoothing:antialiased;
+  }
+  .doc{ max-width:100%; }
+
+  /* title block */
+  h1{ font-size:30pt; font-weight:800; letter-spacing:-.5px; margin:0 0 2px; }
+  h1::first-letter{ color:var(--emerald); }
+  h1 + h2{ border:0; font-size:14pt; color:var(--sub); margin:6px 0 0; padding:0; }
+  h1 + h2 + h3{ font-size:11pt; color:var(--mut); font-weight:600; margin:2px 0 0; }
+  .meta{ font-size:9pt; color:var(--mut); margin-top:10px; }
+  .meta a{ color:var(--indigo); text-decoration:none; }
+
+  /* sections */
+  h2{ font-size:15pt; font-weight:800; margin:22px 0 9px; padding-bottom:5px;
+      border-bottom:2px solid var(--ink); page-break-after:avoid; }
+  h3{ font-size:12pt; font-weight:700; color:var(--indigo); margin:15px 0 6px; page-break-after:avoid; }
+  p{ margin:7px 0; color:var(--sub); }
+  p strong, li strong, td strong{ color:var(--ink); font-weight:700; }
+  a{ color:var(--indigo); }
+
+  /* English translation lines */
+  blockquote{ margin:8px 0; padding:6px 12px; border-left:3px solid var(--emerald-line);
+      background:var(--emerald-bg); color:#3f6b57; font-size:9.6pt; font-style:italic; border-radius:0 6px 6px 0; }
+  blockquote p{ color:#3f6b57; margin:2px 0; }
+
+  /* lists */
+  ul,ol{ margin:7px 0; padding-left:20px; }
+  li{ margin:3px 0; color:var(--sub); }
+
+  /* code / ascii diagrams — preserve spacing, never wrap */
+  pre{ background:var(--code-bg); color:var(--code-ink); border-radius:8px; padding:12px 14px;
+      font:8.6pt/1.5 "SFMono-Regular",Menlo,Consolas,monospace; overflow:hidden;
+      white-space:pre; page-break-inside:avoid; margin:10px 0; }
+  code{ font-family:"SFMono-Regular",Menlo,Consolas,monospace; font-size:9pt;
+      background:#f1f5f9; padding:1px 5px; border-radius:4px; color:#0b1220; }
+  pre code{ background:none; padding:0; color:inherit; font-size:inherit; }
+
+  /* tables */
+  table{ width:100%; border-collapse:collapse; margin:10px 0; font-size:9.4pt; page-break-inside:avoid; }
+  th,td{ border:1px solid var(--line); padding:6px 9px; text-align:left; vertical-align:top; }
+  th{ background:#f8fafc; font-weight:800; color:var(--ink); }
+  td{ color:var(--sub); }
+
+  hr{ border:0; border-top:1px solid var(--line); margin:18px 0; }
+  h2{ page-break-inside:avoid; }
+
+  .foot{ margin-top:22px; padding-top:8px; border-top:1px solid var(--line);
+      font-size:8pt; color:var(--mut); text-align:center; }
+</style>
+</head>
+<body>
+<div class="doc">
+<h1 id="dureclaw">DureClaw</h1>
+<h2
+id="distributed-ai-agent-crew-orchestration-technical-whitepaper">Distributed
+AI Agent Crew Orchestration — Technical Whitepaper</h2>
+<h3 id="one-brain-many-hands-distributed-brains-human-decisions">One
+brain, many hands · distributed brains, human decisions</h3>
+<div class="meta">
+v1.0 · 2026 · DureClaw ·
+<a href="https://github.com/DureClaw">github.com/DureClaw</a> · English
+edition
+</div>
+<hr />
+<h2 id="abstract">Abstract</h2>
+<p>Most factories and organizations already run <strong>multi-platform
+infrastructure</strong> that works — edge devices, GPU servers,
+Windows/macOS PCs, industrial gateways. The hard part is the <em>cost of
+putting AI on top of it</em>: keying every node, exfiltrating data to
+the cloud, and rewriting integrations is heavy and risky.</p>
+<p><strong>DureClaw</strong> does not replace any of it. It adds
+<strong>one real-time collaboration bus</strong> on top of
+infrastructure that already runs, and lets scattered machines join in a
+single line — <strong>keyless</strong>. A <strong>master brain</strong>
+(Claude) absorbs inference, and each node becomes a <em>different kind
+of hands</em> (physical actuators, the browser, the desktop GUI).
+Human-approved decisions are <strong>compiled into deterministic
+rules</strong> and replayed with <strong>zero LLM calls</strong>. It is
+the <em>starting point</em> — from data collection and analysis, to
+automation, to <strong>AX (AI Transformation)</strong>.</p>
+<hr />
+<h2 id="the-problem">1. The Problem</h2>
+<p>Four recurring barriers when bringing AI to scattered
+infrastructure:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Barrier</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Keys &amp; cost</strong></td>
+<td>Per-node model keys explode secret-sprawl, cost, and rate
+limits.</td>
+</tr>
+<tr>
+<td><strong>Data sovereignty</strong></td>
+<td>The moment raw telemetry, video, or audio leaves the floor, it
+becomes a regulatory and security liability.</td>
+</tr>
+<tr>
+<td><strong>Integration</strong></td>
+<td>Wiring heterogeneous OS/CPU/tools (Pi, GPU, Win, Mac, PLC) becomes a
+one-off integration project every time.</td>
+</tr>
+<tr>
+<td><strong>Trust</strong></td>
+<td>When an LLM acts directly, the result is non-deterministic and
+unauditable.</td>
+</tr>
+</tbody>
+</table>
+<p>The guiding principle is <strong>data-acquisition-first</strong>:
+data you don’t capture is lost forever. Before a perfect pipeline, start
+collecting on the infrastructure you already run — the easiest way
+possible.</p>
+<hr />
+<h2 id="core-idea">2. Core Idea</h2>
+<h3 id="one-brain-many-hands">2.1 One brain, many hands</h3>
+<p>The master (Claude) is the <strong>brain</strong>; each node is a
+<strong>different kind of hands</strong>. Over one bus and one keyless
+delegation, a single line of reasoning reaches into the <strong>physical
+world, the browser, or the desktop</strong>.</p>
+<pre><code>                          ┌─ edgeclaw ─ hands in the physical world (shell·sensor·GPIO·LED·buzzer·relay·tower)
+   master brain ─fan-out──┼─ webclaw  ─ hands in the browser        (fetch·DOM, CORS-free)
+   (Claude · vision)      ├─ deskclaw ─ hands on the desktop GUI     (screenshot·click·type·launch)
+                          └─ adapters ─ hands of existing tools      (pico·nano·zero·null)</code></pre>
+<h3 id="keyless-edges">2.2 Keyless edges</h3>
+<p>Edge nodes hold <strong>no model key</strong>. When a
+natural-language task arrives, the node delegates the prompt to the
+master brain’s <code>/brain/exec</code> and receives only the result.
+Cost, keys, and rate limits are absorbed in one place — the master.</p>
+<h3 id="decision-freezing-llm-as-compiler">2.3 Decision freezing (LLM as
+compiler)</h3>
+<p>The LLM is not called every time. A decision a human has
+<strong>approved once</strong> is <strong>frozen</strong> into a
+deterministic rule or macro, and the same problem is replayed in
+microseconds with <strong>zero LLM calls</strong>. The LLM is a
+<em>compiler</em>, not a runtime dependency — this is the heart of the
+closed learning loop.</p>
+<hr />
+<h2 id="architecture">3. Architecture</h2>
+<h3 id="the-collaboration-bus">3.1 The collaboration bus</h3>
+<p>The DureClaw bus is a single WebSocket channel over <strong>Phoenix
+Channel</strong> (Elixir). The wire protocol is a 5-tuple JSON
+frame:</p>
+<pre><code>[join_ref, ref, topic, event, payload]</code></pre>
+<ul>
+<li><strong>Join</strong>: <code>phx_join</code> → topic
+<code>work:&lt;WORK_KEY&gt;</code>. Registers role and capabilities in
+presence.</li>
+<li><strong>Dispatch</strong>: the master fans out
+<code>task.assign</code> (to a specific node or
+<code>broadcast</code>).</li>
+<li><strong>Result</strong>: a node pushes <code>task.result</code>
+(must include the connection’s <code>join_ref</code>).</li>
+<li><strong>State</strong>: approvals/decisions propagate via
+<code>task.result{approved}</code> or <code>state.update</code>.</li>
+<li><strong>Heartbeat</strong>:
+<code>phoenix</code>/<code>heartbeat</code> keeps presence alive.</li>
+</ul>
+<p>Auxiliary REST API: <code>POST /api/task</code>,
+<code>GET /api/task-result/:id</code>, <code>/api/presence</code>,
+<code>/api/work-keys/latest</code>, <code>/api/health</code>. Auth is a
+Bearer token (<code>OAH_SECRET</code>).</p>
+<h3 id="the-master-brain">3.2 The master brain</h3>
+<p>The master collects fan-in from the nodes, reasons, and only
+<strong>proposes</strong> — it never acts directly. Through the keyless
+delegation endpoint (<code>/brain/exec</code>) it handles edge nodes’
+natural-language tasks on their behalf. This separates <em>vision and
+reasoning at the center</em> from <em>action at the edge</em>.</p>
+<h3 id="the-node-family">3.3 The node family</h3>
+<p><strong>Native nodes</strong> — built bus-first, one-line join,
+keyless:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Node</th>
+<th>Kind of hands</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>edgeclaw</strong></td>
+<td>Physical world — shell·sensor·GPIO·LED·buzzer·relay·signal tower·PA
+voice</td>
+<td>Single static Go binary, no CGo. Win·Mac·Linux·Pi Zero
+(armv6)·riscv64… physical-edge runs on any Linux exposing a gpiochip
+(Pi·Jetson·industrial gateway)</td>
+</tr>
+<tr>
+<td><strong>webclaw</strong></td>
+<td>The browser — fetch·DOM (CORS-free, always-on)</td>
+<td>Chrome MV3 extension, pure JS</td>
+</tr>
+<tr>
+<td><strong>deskclaw</strong></td>
+<td>Desktop GUI — screenshot·click·type·key·launch + <strong>RPA
+record→replay</strong></td>
+<td>Win/macOS, pure Go/no-CGo (built-in OS tooling)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Adapters</strong> — bring an existing open-source tool onto
+the bus with a <code>dureclaw/</code> bridge: <strong>picoclaw</strong>
+(Go) · <strong>nanobot</strong> (Py) · <strong>zeroclaw</strong> (Rust)
+· <strong>nullclaw</strong> (Zig). Same wire protocol, same keyless
+delegation.</p>
+<h3 id="message-flow">3.4 Message flow</h3>
+<pre><code>[scattered devices]        [collaboration bus]     [master brain]        [human]
+ sensor·GPU·PC ── one line ──▶ DureClaw ──fan-out──▶ Claude (synthesize) ──▶ approve · freeze
+   (keyless)                presence·task                                     ↓
+       └────────── closed loop: compile approved decisions into rules → µs replay (0 LLM) ──────────┘</code></pre>
+<hr />
+<h2 id="two-concrete-forms-of-freezing">4. Two concrete forms of
+freezing</h2>
+<p>Not an abstract principle — it runs in <strong>two real
+places</strong>:</p>
+<ol type="1">
+<li><strong>Skill cache on the line.</strong> When the LLM performs a
+judgment such as a defect investigation on the first pass, the result is
+cached as a deterministic rule. The same pattern is then applied
+instantly, with no LLM. (Open MES Korea <code>EXT-5</code> integration
+hub.)</li>
+<li><strong>RPA macros on the desktop.</strong> In deskclaw, when the
+master (vision) teaches <em>launch a program → click the right menu →
+type</em> one grounded step at a time, deskclaw <strong>records</strong>
+those steps into a macro (JSON). Afterwards
+<code>[RUN] &lt;name&gt;</code> replays them deterministically with
+<strong>no LLM</strong>.</li>
+</ol>
+<p>Same closed loop, two embodiments — <em>teach once, then replay
+forever without the LLM.</em></p>
+<hr />
+<h2 id="security-governance">5. Security &amp; Governance</h2>
+<ul>
+<li><strong>Humans decide.</strong> The master only proposes;
+significant changes require human approval. Approval is the execution
+trigger.</li>
+<li><strong>Keyless edges.</strong> With no model key on the edge, the
+key-leak surface shrinks.</li>
+<li><strong>Data stays at the edge.</strong> Raw telemetry and video
+never leave the floor; only <em>refined context</em> goes to the
+master.</li>
+<li><strong>Auditable.</strong> Every write and approval is recorded in
+an audit log (Open MES Korea AuditLog). Decision freezing also removes
+<em>non-determinism</em>.</li>
+<li><strong>Minimal footprint.</strong> Brokerless HTTP/WS push first —
+start without a new message queue or agent runtime.</li>
+</ul>
+<hr />
+<h2 id="use-case-distributed-edge-manufacturing-mes">6. Use Case —
+Distributed Edge × Manufacturing MES</h2>
+<p>The <strong>dure-factory</strong> demo combines the DureClaw bus with
+<strong>Open MES Korea</strong> (an AI-native MES). The golden
+scenario:</p>
+<ol type="1">
+<li><strong>Sense</strong> — Pi (<code>executor@pi-cam</code>), GPU, and
+PC nodes join the bus keyless. A defect trigger fires.</li>
+<li><strong>Synthesize</strong> — the master fans in signals from many
+nodes and reasons about the defect cause by role, then proposes.</li>
+<li><strong>Approve</strong> — a quality manager reviews and approves in
+the MES UI → <code>quarantine</code>.</li>
+<li><strong>Physical result</strong> — when the approval is broadcast
+over the bus, an edge node fires a 🔴 LED, buzzer, and voice. <em>The AI
+decision returns to the physical world.</em></li>
+<li><strong>Freeze</strong> — the approved judgment is compiled into a
+skill-cache rule; the next identical case costs zero LLM calls.</li>
+</ol>
+<p>A single defect fans out to many machines in about a second, Claude
+synthesizes a structured suggestion, a human approves, the decision
+returns to the physical world, and it is frozen into a reusable rule —
+with an audit trail throughout.</p>
+<hr />
+<h2 id="from-here-to-ax">7. From here to AX</h2>
+<pre><code>[existing infra] ──▶  ① collect  ──▶  ② analyze (LLM)  ──▶  ③ automate (compile rules)  ──▶  ④ AX
+ no rebuild           data            analysis              automation                     AI transformation</code></pre>
+<p>DureClaw provides a <em>continuous path</em> from ① to ④. Each stage
+reuses the data and approvals of the previous one, and the closed loop
+lowers LLM dependence over time.</p>
+<hr />
+<h2 id="roadmap">8. Roadmap</h2>
+<ul>
+<li><strong>deskclaw</strong> — accessibility-tree targeting (pixels →
+elements, robust to window moves), a screenshot→brain upload loop, macro
+parameters.</li>
+<li><strong>edgeclaw</strong> — more actuator profiles (Modbus/OPC-UA
+relays), industrial-protocol SourceAdapters.</li>
+<li><strong>bus</strong> — versioning and rollout of frozen decision
+rules, multi-work-key orchestration.</li>
+<li><strong>MES</strong> — richer cross-source investigation over
+time-series (EXT-1) and multimedia (EXT-2), predictive maintenance
+(EXT-3).</li>
+</ul>
+<hr />
+<h2 id="conclusion">9. Conclusion</h2>
+<p>DureClaw is not a <em>new AI platform</em> but a <strong>thin layer
+that turns infrastructure you already run into a collaborating AI
+crew</strong>. Keyless edges, one-brain-many-hands, decision-freezing —
+with these three principles you can go from data collection to AX
+<em>without a rebuild</em>.</p>
+<p><strong>Data at the edge · brains distributed · learning in a closed
+loop · humans decide.</strong></p>
+<hr />
+<h2 id="appendix-a.-wire-protocol">Appendix A. Wire protocol</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Event</th>
+<th>Direction</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>phx_join</code></td>
+<td>node → bus</td>
+<td>join <code>work:&lt;WK&gt;</code> + register presence (role,
+capabilities)</td>
+</tr>
+<tr>
+<td><code>task.assign</code></td>
+<td>bus → node</td>
+<td>dispatch a task (<code>to</code>: node name or
+<code>broadcast</code>)</td>
+</tr>
+<tr>
+<td><code>task.result</code></td>
+<td>node → bus</td>
+<td>return a result (must include the connection’s
+<code>join_ref</code>)</td>
+</tr>
+<tr>
+<td><code>state.update</code></td>
+<td>bus → node</td>
+<td>propagate state/decisions
+(e.g. <code>decision_&lt;lot&gt;: quarantine</code>)</td>
+</tr>
+<tr>
+<td><code>heartbeat</code></td>
+<td>node → bus</td>
+<td>keep presence alive (15–30s)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-b.-node-environment-variables-common">Appendix B. Node
+environment variables (common)</h2>
+<p><code>STATE_SERVER</code> (bus host:port) · <code>OAH_SECRET</code>
+(Bearer) · <code>WORK_KEY</code> ·
+<code>AGENT_NAME</code>/<code>AGENT_ROLE</code>/<code>CAPABILITIES</code>
+· <code>BRAIN_URL</code>/<code>BRAIN_TOKEN</code> (keyless LLM
+delegation).</p>
+<div class="foot">
+DureClaw Technical Whitepaper v1.0 (English edition) · Data at the edge
+· brains distributed · learning in a closed loop · humans decide ·
+github.com/DureClaw
+</div>
+</div>
+</body>
+</html>
