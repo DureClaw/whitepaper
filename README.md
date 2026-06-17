@@ -10,6 +10,21 @@ _The source + build pipeline for the DureClaw technical whitepaper._
 
 같은 내용을 두 판으로 — 한글중심 / 영어중심. _Same content, two editions._
 
+## 🎬 라이브 데모 / Live demo
+
+백서의 핵심 두 장면을 실제 라이브 시스템(DureClaw 버스 + Open MES Korea)에서 캡처했습니다.
+_Captured on the live system — DureClaw bus + Open MES Korea._
+
+**① fan-out → 마스터 종합 / fan-out → master synthesis**
+불량 하나가 fleet로 fan-out → 이종 노드 fan-in → 마스터가 SUGGEST(원인·신뢰도·권고) 종합.
+
+![fan-out → synthesis](demo/mes-fanout.gif)
+
+**② 결정 동결 — "LLM as compiler" / decision freezing**
+사람이 승인 → 결정을 룰로 동결 → 같은 패턴은 **LLM 0회 · 2µs**로 재사용(15.6s 절감).
+
+![decision freezing](demo/decision-freeze.gif)
+
 ## 무엇을 다루나 / Contents
 
 분산 디바이스를 하나의 협력 AI 크루로 묶는 DureClaw의 설계를 정리합니다 — _the design behind turning scattered devices into one collaborating AI crew._
