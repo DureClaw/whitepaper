@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>DureClaw — Technical Whitepaper</title>
+<style>
+  @page { size: A4; margin: 17mm 15mm 16mm; }
+  :root{
+    --ink:#0f172a; --sub:#334155; --mut:#94a3b8; --line:#e2e8f0;
+    --emerald:#059669; --emerald-bg:#ecfdf5; --emerald-line:#a7f3d0;
+    --indigo:#4f46e5; --indigo-bg:#eef2ff; --code-bg:#0b1220; --code-ink:#cdd9e5;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",-apple-system,system-ui,sans-serif;
+    color:var(--ink); font-size:10.5pt; line-height:1.66; -webkit-font-smoothing:antialiased;
+  }
+  .doc{ max-width:100%; }
+
+  /* title block */
+  h1{ font-size:30pt; font-weight:800; letter-spacing:-.5px; margin:0 0 2px; }
+  h1::first-letter{ color:var(--emerald); }
+  h1 + h2{ border:0; font-size:14pt; color:var(--sub); margin:6px 0 0; padding:0; }
+  h1 + h2 + h3{ font-size:11pt; color:var(--mut); font-weight:600; margin:2px 0 0; }
+  .meta{ font-size:9pt; color:var(--mut); margin-top:10px; }
+  .meta a{ color:var(--indigo); text-decoration:none; }
+
+  /* sections */
+  h2{ font-size:15pt; font-weight:800; margin:22px 0 9px; padding-bottom:5px;
+      border-bottom:2px solid var(--ink); page-break-after:avoid; }
+  h3{ font-size:12pt; font-weight:700; color:var(--indigo); margin:15px 0 6px; page-break-after:avoid; }
+  p{ margin:7px 0; color:var(--sub); }
+  p strong, li strong, td strong{ color:var(--ink); font-weight:700; }
+  a{ color:var(--indigo); }
+
+  /* English translation lines */
+  blockquote{ margin:8px 0; padding:6px 12px; border-left:3px solid var(--emerald-line);
+      background:var(--emerald-bg); color:#3f6b57; font-size:9.6pt; font-style:italic; border-radius:0 6px 6px 0; }
+  blockquote p{ color:#3f6b57; margin:2px 0; }
+
+  /* lists */
+  ul,ol{ margin:7px 0; padding-left:20px; }
+  li{ margin:3px 0; color:var(--sub); }
+
+  /* code / ascii diagrams — preserve spacing, never wrap */
+  pre{ background:var(--code-bg); color:var(--code-ink); border-radius:8px; padding:12px 14px;
+      font:8.6pt/1.5 "SFMono-Regular",Menlo,Consolas,monospace; overflow:hidden;
+      white-space:pre; page-break-inside:avoid; margin:10px 0; }
+  code{ font-family:"SFMono-Regular",Menlo,Consolas,monospace; font-size:9pt;
+      background:#f1f5f9; padding:1px 5px; border-radius:4px; color:#0b1220; }
+  pre code{ background:none; padding:0; color:inherit; font-size:inherit; }
+
+  /* tables */
+  table{ width:100%; border-collapse:collapse; margin:10px 0; font-size:9.4pt; page-break-inside:avoid; }
+  th,td{ border:1px solid var(--line); padding:6px 9px; text-align:left; vertical-align:top; }
+  th{ background:#f8fafc; font-weight:800; color:var(--ink); }
+  td{ color:var(--sub); }
+
+  hr{ border:0; border-top:1px solid var(--line); margin:18px 0; }
+  h2{ page-break-inside:avoid; }
+
+  .foot{ margin-top:22px; padding-top:8px; border-top:1px solid var(--line);
+      font-size:8pt; color:var(--mut); text-align:center; }
+</style>
+</head>
+<body>
+<div class="doc">
+<h1 id="dureclaw">DureClaw</h1>
+<h2 id="분산-ai-에이전트-크루-오케스트레이션-기술-백서">분산 AI 에이전트
+크루 오케스트레이션 — 기술 백서</h2>
+<h3
+id="distributed-ai-agent-crew-orchestration-technical-whitepaper">Distributed
+AI Agent Crew Orchestration — Technical Whitepaper</h3>
+<p><strong>한 두뇌, 여러 손 · 두뇌는 분산, 결정은 사람</strong> <em>One
+brain, many hands · distributed brains, human decisions</em></p>
+<div class="meta">
+v1.0 · 2026 · DureClaw ·
+<a href="https://github.com/DureClaw">github.com/DureClaw</a>
+</div>
+<hr />
+<h2 id="초록-abstract">초록 / Abstract</h2>
+<p>대부분의 공장·조직은 이미 <strong>여러 플랫폼의 인프라</strong>(엣지
+디바이스, GPU 서버, Windows·macOS PC, 산업용 게이트웨이)를 잘 돌리고
+있다. 문제는 <em>그 위에 AI를 얹는 비용</em>이다 — 모든 노드에 API 키를
+심고, 데이터를 클라우드로 빼고, 통합을 새로 짜는 일은 무겁고
+위험하다.</p>
+<blockquote>
+<p>Most organizations already run <strong>multi-platform
+infrastructure</strong> that works. The hard part is the <em>cost of
+putting AI on top of it</em> — keying every node, exfiltrating data, and
+rewriting integrations is heavy and risky.</p>
+</blockquote>
+<p><strong>DureClaw</strong>는 갈아엎지 않는다. 이미 도는 인프라 위에
+<strong>하나의 실시간 협력 버스</strong>를 얹고, 흩어진 머신을
+<strong>키 없이(keyless)</strong> 한 줄로 합류시킨다. 추론은
+<strong>마스터 브레인</strong>(Claude)이 흡수하고, 각 노드는 <em>서로
+다른 손</em>(물리 액추에이터·브라우저·데스크톱 GUI)이 된다. 사람이
+승인한 판단은 <strong>결정론적 룰로 컴파일</strong>되어 다음부터는
+<strong>LLM 0회</strong>로 재사용된다. 데이터 수집·분석에서 시작해
+자동화와 <strong>AX(AI Transformation)</strong>로 가는
+<em>시작점</em>이다.</p>
+<blockquote>
+<p>DureClaw adds <strong>one real-time collaboration bus</strong> on top
+of infrastructure that already runs. Scattered machines join in one
+line, <strong>keyless</strong>. A <strong>master brain</strong> (Claude)
+absorbs inference; each node is a <em>different kind of hands</em>.
+Human-approved decisions are <strong>compiled into deterministic
+rules</strong> and replayed with <strong>zero LLM calls</strong>. It is
+the <em>starting point</em> — from data collection to automation to
+<strong>AX</strong>.</p>
+</blockquote>
+<hr />
+<h2 id="문제-the-problem">1. 문제 / The Problem</h2>
+<p>흩어진 인프라에 AI를 도입할 때 반복되는 네 가지 벽:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>벽 / Barrier</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>키·비용 / Keys &amp; cost</strong></td>
+<td>노드마다 모델 키를 심으면 키 관리·비용·레이트리밋이 폭증한다.
+Per-node keys explode cost and secret-sprawl.</td>
+</tr>
+<tr>
+<td><strong>데이터 주권 / Data sovereignty</strong></td>
+<td>원시 telemetry·영상·소음을 클라우드로 빼는 순간 규제·보안 리스크.
+Raw data leaving the floor is a liability.</td>
+</tr>
+<tr>
+<td><strong>통합 / Integration</strong></td>
+<td>이종 OS·CPU·도구(Pi·GPU·Win·Mac·PLC)를 잇는 일이 매번 일회성 통합
+프로젝트가 된다.</td>
+</tr>
+<tr>
+<td><strong>신뢰 / Trust</strong></td>
+<td>LLM이 직접 실행하면 비결정성·감사 불가. Direct LLM action is
+non-deterministic and unauditable.</td>
+</tr>
+</tbody>
+</table>
+<p>핵심은 <em>데이터 확보 우선</em>이다 — <strong>수집하지 못한 데이터는
+영원히 잃는다.</strong> 완벽한 파이프라인보다, 지금 도는 인프라에서
+<strong>가장 쉬운 방법으로 데이터를 모으기 시작</strong>하는 것이
+먼저다.</p>
+<blockquote>
+<p>The principle is <strong>data-acquisition-first</strong>: data you
+don’t capture is lost forever. Start collecting on the infrastructure
+you already have, the easiest way possible.</p>
+</blockquote>
+<hr />
+<h2 id="핵심-아이디어-core-idea">2. 핵심 아이디어 / Core Idea</h2>
+<h3 id="한-두뇌-여러-손-one-brain-many-hands">2.1 한 두뇌, 여러 손 / One
+brain, many hands</h3>
+<p>마스터(Claude)가 <strong>두뇌</strong>, 각 노드는 <strong>서로 다른
+손</strong>이다. 같은 버스·같은 keyless 위임으로, 하나의 추론이
+<strong>물리 세계·브라우저·데스크톱</strong> 어디로든 손을 뻗는다.</p>
+<pre><code>                         ┌─ edgeclaw ─ 물리 세계의 손 (shell·sensor·GPIO·LED·부저·릴레이·신호탑)
+   마스터 두뇌 ──fan-out──┼─ webclaw  ─ 브라우저의 손   (fetch·DOM, CORS-free)
+   (Claude·비전·추론)     ├─ deskclaw ─ 데스크톱 GUI의 손 (스크린샷·클릭·타이핑·앱실행)
+                         └─ adapters ─ 기존 도구의 손  (pico·nano·zero·null)</code></pre>
+<h3 id="keyless-엣지-keyless-edges">2.2 Keyless 엣지 / Keyless
+edges</h3>
+<p>엣지 노드는 <strong>모델 키를 갖지 않는다.</strong> 자연어 작업이
+오면 노드는 프롬프트를 마스터 브레인의 <code>/brain/exec</code>로
+위임하고 결과만 받는다. 비용·키·레이트리밋은 마스터 한 곳이
+흡수한다.</p>
+<blockquote>
+<p>Edge nodes hold <strong>no model key</strong>. They delegate prompts
+to the master brain and receive results; the master absorbs all cost and
+secret management.</p>
+</blockquote>
+<h3 id="결정-동결-decision-freezing-llm-as-compiler">2.3 결정 동결 /
+Decision freezing (LLM as compiler)</h3>
+<p>LLM을 매번 부르지 않는다. 사람이 <strong>한 번 승인한 판단</strong>은
+결정론적 룰/매크로로 <strong>동결(freeze)</strong>되어, 같은 문제는 µs
+단위로 <strong>LLM 0회</strong> 재생된다. 이것이 닫힌 학습 루프의
+핵심이다.</p>
+<blockquote>
+<p>The LLM is a <em>compiler</em>, not a runtime dependency. An approved
+decision is frozen into a deterministic rule/macro and replayed with
+zero LLM calls.</p>
+</blockquote>
+<hr />
+<h2 id="아키텍처-architecture">3. 아키텍처 / Architecture</h2>
+<h3 id="협력-버스-the-collaboration-bus">3.1 협력 버스 / The
+collaboration bus</h3>
+<p>DureClaw 버스는 <strong>Phoenix Channel</strong>(Elixir) 위의
+WebSocket 한 채널이다. 와이어 프로토콜은 5-튜플 JSON 프레임이다:</p>
+<pre><code>[join_ref, ref, topic, event, payload]</code></pre>
+<ul>
+<li><strong>합류 / join</strong>: <code>phx_join</code> →
+<code>work:&lt;WORK_KEY&gt;</code> 토픽. presence에 자기
+역할·능력(capabilities)을 등록.</li>
+<li><strong>분배 / dispatch</strong>: 마스터가
+<code>task.assign</code>을 fan-out (특정 노드 또는
+<code>broadcast</code>).</li>
+<li><strong>회신 / result</strong>: 노드가 <code>task.result</code>를
+push (join_ref 포함 필수).</li>
+<li><strong>상태 / state</strong>: 승인·결정은
+<code>task.result{approved}</code> 또는 <code>state.update</code>로
+전파.</li>
+<li><strong>하트비트 / heartbeat</strong>:
+<code>phoenix</code>/<code>heartbeat</code>로 presence 유지.</li>
+</ul>
+<p>REST 보조 API: <code>POST /api/task</code>,
+<code>GET /api/task-result/:id</code>, <code>/api/presence</code>,
+<code>/api/work-keys/latest</code>, <code>/api/health</code>. 인증은
+Bearer 토큰(<code>OAH_SECRET</code>).</p>
+<h3 id="마스터-브레인-the-master-brain">3.2 마스터 브레인 / The master
+brain</h3>
+<p>마스터는 노드들의 fan-in을 수집해 추론하고
+<strong>제안(propose)</strong>만 한다 — 직접 실행은 0. keyless 위임
+엔드포인트(<code>/brain/exec</code>)로 엣지의 자연어 작업을 대신
+처리한다. 이로써 <em>비전·추론은 중앙</em>, <em>행동은 엣지</em>로
+분리된다.</p>
+<h3 id="노드-패밀리-the-node-family">3.3 노드 패밀리 / The node
+family</h3>
+<p><strong>네이티브 노드 / Native nodes</strong> — 버스 우선 설계, 한
+줄로 합류, keyless:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>노드</th>
+<th>손의 종류 / Hands</th>
+<th>구현</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>edgeclaw</strong></td>
+<td>물리 세계 — shell·sensor·GPIO·LED·부저·릴레이·신호탑·PA 음성</td>
+<td>단일 정적 Go 바이너리, No-CGo. Win·Mac·Linux·Pi Zero(armv6)·riscv64…
+physical-edge는 gpiochip 노출 모든 Linux(Pi·Jetson·산업 게이트웨이)</td>
+</tr>
+<tr>
+<td><strong>webclaw</strong></td>
+<td>브라우저 — fetch·DOM (CORS-free, 상시)</td>
+<td>Chrome MV3 확장, 순수 JS</td>
+</tr>
+<tr>
+<td><strong>deskclaw</strong></td>
+<td>데스크톱 GUI — 스크린샷·클릭·타이핑·키·앱실행 + <strong>RPA
+record→replay</strong></td>
+<td>Win/macOS, 순수 Go/No-CGo (OS 내장 도구)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>어댑터 / Adapters</strong> — 기존 오픈소스 도구에
+<code>dureclaw/</code> 브리지를 더해 합류: <strong>picoclaw</strong>(Go)
+· <strong>nanobot</strong>(Py) · <strong>zeroclaw</strong>(Rust) ·
+<strong>nullclaw</strong>(Zig).</p>
+<blockquote>
+<p>Native nodes are designed bus-first; adapters bring existing tools
+onto the same bus with a thin bridge. Same wire protocol, same keyless
+delegation.</p>
+</blockquote>
+<h3 id="메시지-흐름-message-flow">3.4 메시지 흐름 / Message flow</h3>
+<pre><code>[흩어진 디바이스]          [협력 버스]            [마스터 브레인]        [사람]
+ sensor·GPU·PC ── one line ──▶ DureClaw ──fan-out──▶ Claude (종합·제안) ──▶ 승인 · 결정 동결
+   (keyless)                presence·task                                    ↓
+       └────────── 닫힌 학습 루프: 승인된 결정을 룰로 컴파일 → µs 재사용 (LLM 0회) ──────────┘</code></pre>
+<hr />
+<h2 id="결정-동결의-두-실재-two-concrete-forms-of-freezing">4. 결정
+동결의 두 실재 / Two concrete forms of freezing</h2>
+<p>추상 원칙이 아니라 <strong>실제 두 곳</strong>에서 동작한다:</p>
+<ol type="1">
+<li><strong>제조 라인 — 스킬 캐시 / Skill cache on the line.</strong>
+불량 조사 같은 판단을 1회차에 LLM이 수행하면, 그 결과를 결정론적 룰로
+캐시한다. 같은 패턴은 이후 LLM 없이 즉시 적용된다. (Open MES Korea
+<code>EXT-5</code> 연동 허브.)</li>
+<li><strong>데스크톱 — RPA 매크로 / RPA macros on the desktop.</strong>
+deskclaw에서 마스터(비전)가 <em>프로그램 실행 → 지정 메뉴 클릭 →
+입력</em>을 한 단계씩 가르치면, deskclaw가 그 단계를 매크로(JSON)로
+<strong>기록</strong>한다. 다음부터 <code>[RUN] &lt;name&gt;</code>은
+<strong>LLM 없이</strong> 결정론적으로 재생한다.</li>
+</ol>
+<blockquote>
+<p>Same closed loop, two embodiments: skill-cache rules on the
+manufacturing line, RPA macros on the desktop. Teach once with the LLM;
+replay forever without it.</p>
+</blockquote>
+<hr />
+<h2 id="보안거버넌스-security-governance">5. 보안·거버넌스 / Security
+&amp; Governance</h2>
+<ul>
+<li><strong>사람이 결정한다 / Human-in-the-loop.</strong> 마스터는
+제안만 하고, 중요한 변경은 사람이 승인한다. 승인 = 실행 트리거.</li>
+<li><strong>keyless 엣지 / Keyless edges.</strong> 엣지에 모델 키가
+없으므로 키 유출면이 줄어든다.</li>
+<li><strong>데이터는 엣지에 / Data stays at the edge.</strong> 원시
+telemetry·영상은 공장을 떠나지 않고, <em>정제된 컨텍스트만</em> 마스터로
+간다.</li>
+<li><strong>감사 / Auditable.</strong> 모든 쓰기·승인은 감사 로그로
+남는다(Open MES Korea AuditLog). 결정 동결로 <em>비결정성</em>도
+제거된다.</li>
+<li><strong>최소 인프라 / Minimal footprint.</strong> 브로커리스 HTTP/WS
+push 우선 — 새 메시지 큐·에이전트 런타임 없이 시작.</li>
+</ul>
+<hr />
+<h2 id="적용-사례-use-case-분산-엣지-제조-mes">6. 적용 사례 / Use Case —
+분산 엣지 × 제조 MES</h2>
+<p><strong>dure-factory</strong> 데모는 DureClaw 버스와 <strong>Open MES
+Korea</strong>(AI-native MES)를 결합한다. 골든 시나리오:</p>
+<ol type="1">
+<li><strong>센싱 / Sense</strong> —
+Pi(<code>executor@pi-cam</code>)·GPU·PC 노드가 키 없이 버스에 합류. 불량
+트리거 발생.</li>
+<li><strong>종합 / Synthesize</strong> — 마스터가 여러 노드의 신호를
+fan-in 수집, 불량 원인을 역할별로 추론·제안.</li>
+<li><strong>승인 / Approve</strong> — 품질관리자가 MES UI에서 검토·승인
+→ <code>quarantine</code>.</li>
+<li><strong>물리 회신 / Physical result</strong> — 승인이 버스로
+broadcast되면 엣지 노드가 🔴 LED·부저·음성으로 발화. <em>AI 결정이 물리
+세계로 되돌아온다.</em></li>
+<li><strong>동결 / Freeze</strong> — 승인된 판단은 스킬 캐시 룰로
+컴파일, 다음 동일 케이스는 LLM 0회.</li>
+</ol>
+<blockquote>
+<p>A defect on the line fans out to many machines in ~1 second, Claude
+synthesizes a structured suggestion, a human approves, the decision
+returns to the physical world (LED/buzzer), and is frozen into a
+reusable rule — with an audit trail throughout.</p>
+</blockquote>
+<hr />
+<h2 id="시작점-ax-여정-from-here-to-ax">7. 시작점 → AX 여정 / From here
+to AX</h2>
+<pre><code>[기존 인프라]  ──▶  ① 데이터 수집  ──▶  ② 분석(LLM)  ──▶  ③ 자동화(룰 컴파일)  ──▶  ④ AX
+ 갈아엎지 않음        collect            analyze           automate                AI transformation</code></pre>
+<p>DureClaw는 ①에서 시작해 ④로 가는 <em>연속적인 길</em>을 제공한다. 각
+단계는 이전 단계의 데이터·승인을 재사용하며, 닫힌 루프가 시간이 갈수록
+LLM 의존도를 낮춘다.</p>
+<hr />
+<h2 id="로드맵-roadmap">8. 로드맵 / Roadmap</h2>
+<ul>
+<li><strong>deskclaw</strong> — 접근성 트리 타게팅(좌표→요소, 창
+이동에도 견고), 스크린샷→brain 업로드 루프, 매크로 파라미터.</li>
+<li><strong>edgeclaw</strong> — 더 많은 액추에이터
+프로파일(Modbus/OPC-UA 릴레이), 산업 프로토콜 SourceAdapter.</li>
+<li><strong>버스 / bus</strong> — 결정 동결 룰의 버전 관리·배포, 멀티
+워크키 오케스트레이션.</li>
+<li><strong>MES</strong> — 시계열(EXT-1)·멀티미디어(EXT-2) 종합 조사
+고도화, 예지보전(EXT-3).</li>
+</ul>
+<hr />
+<h2 id="결론-conclusion">9. 결론 / Conclusion</h2>
+<p>DureClaw는 <em>새 AI 플랫폼</em>이 아니라, <strong>이미 도는 인프라를
+AI 크루로 바꾸는 얇은 층</strong>이다. keyless 엣지, 한 두뇌-여러 손,
+결정 동결 — 이 세 원칙으로 데이터 수집에서 AX까지 <em>갈아엎지 않고</em>
+갈 수 있다. <strong>데이터는 엣지 · 두뇌는 분산 · 학습은 닫힌 루프 ·
+결정은 사람.</strong></p>
+<blockquote>
+<p>DureClaw is not a new AI platform but a <em>thin layer</em> that
+turns infrastructure-you-already-run into a collaborating AI crew.
+Keyless edges, one-brain-many-hands, decision-freezing — three
+principles to go from data to AX without a rebuild.</p>
+</blockquote>
+<hr />
+<h2 id="부록-a.-와이어-프로토콜-wire-protocol">부록 A. 와이어 프로토콜 /
+Wire protocol</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>이벤트 / Event</th>
+<th>방향</th>
+<th>의미</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>phx_join</code></td>
+<td>node → bus</td>
+<td><code>work:&lt;WK&gt;</code> 합류 + presence
+등록(역할·capabilities)</td>
+</tr>
+<tr>
+<td><code>task.assign</code></td>
+<td>bus → node</td>
+<td>작업 분배 (<code>to</code>: 노드명 또는 <code>broadcast</code>)</td>
+</tr>
+<tr>
+<td><code>task.result</code></td>
+<td>node → bus</td>
+<td>결과 회신 (반드시 연결의 <code>join_ref</code> 포함)</td>
+</tr>
+<tr>
+<td><code>state.update</code></td>
+<td>bus → node</td>
+<td>상태/결정 전파 (예:
+<code>decision_&lt;lot&gt;: quarantine</code>)</td>
+</tr>
+<tr>
+<td><code>heartbeat</code></td>
+<td>node → bus</td>
+<td>presence 유지 (15–30s)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="부록-b.-노드-환경변수-node-env-공통">부록 B. 노드 환경변수 /
+Node env (공통)</h2>
+<p><code>STATE_SERVER</code>(버스 host:port) ·
+<code>OAH_SECRET</code>(Bearer) · <code>WORK_KEY</code> ·
+<code>AGENT_NAME</code>/<code>AGENT_ROLE</code>/<code>CAPABILITIES</code>
+· <code>BRAIN_URL</code>/<code>BRAIN_TOKEN</code>(keyless LLM 위임).</p>
+<div class="foot">
+DureClaw Technical Whitepaper v1.0 · 데이터는 엣지 · 두뇌는 분산 ·
+학습은 닫힌 루프 · 결정은 사람 · github.com/DureClaw
+</div>
+</div>
+</body>
+</html>
