@@ -25,6 +25,12 @@ _Captured on the live system — DureClaw bus + Open MES Korea._
 
 ![decision freezing](demo/decision-freeze.gif)
 
+**③ deskclaw RPA — teach once, replay with no LLM**
+마스터가 한 번 가르치면(record→launch) 매크로로 동결 → `[RUN]`은 **LLM 없이** 결정론적 재생.
+실제 화면녹화(계산기 창): 등장(학습) → 리셋 → 재등장(재생). _[mp4](demo/deskclaw-rpa.mp4)_
+
+![deskclaw RPA record→replay](demo/deskclaw-rpa.gif)
+
 ## 무엇을 다루나 / Contents
 
 분산 디바이스를 하나의 협력 AI 크루로 묶는 DureClaw의 설계를 정리합니다 — _the design behind turning scattered devices into one collaborating AI crew._
